@@ -1,0 +1,203 @@
+---
+title: "Causal inference workshop by Richard McElreath"
+author: "Jitao david Zhang"
+date: "29/11/2021"
+output: html_document
+---
+
+This document walks through the models introduced in the causal inference workshop given by Richard McElreath.
+
+* [The workshop, Science Before Statistics: Causal Inference](https://www.youtube.com/watch?v=KNPYUVmY3NM&t=2084s)
+* [The original R script posted on GitHub](https://github.com/rmcelreath/causal_salad_2021/blob/main/1_causal_salad.r)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rethinking)
+library(dagitty)
+library(cmdstanr) ## installation instructions available at https://mc-stan.org/cmdstanr/articles/cmdstanr.html
+```
+
+# The two moms example
+
+```{r, fig.height=3, fig.width=3}
+tm <- dagitty("dag {
+              B1 -> M ;
+              M -> D;
+              B2 -> D }")
+plot(tm)
+```
+
+```{r twoMomsWoConfound}
+set.seed(1887)
+N <- 200 # number of pairs
+
+B1 <- rbinom(N, size=1, prob=0.5) # 50% first borns
+M <- rnorm(N, 2*B1)
+B2 <- rbinom(N, size=1, prob=0.5)
+D <- rnorm(N, 2*B2 + 0*M) # change the 0 to another number to turn on the causal influence of mom
+
+summary(lm(D ~ M))
+summary(lm(D ~ M + B1))
+summary(lm(D ~ M + B2))
+
+plot(coeftab(lm(D ~ M),
+             lm(D ~ M + B1),
+             lm(D ~ M + B2)),
+              pars="M")
+```
+Given the causal model, adding B1 to the model leads to worse precision, while adding B2 has better precision.
+
+Now with confound.
+
+```{r, fig.height=3, fig.width=3}
+tmc <- dagitty("dag {
+              B1 -> M ;
+              M -> D;
+              B2 -> D;
+              U -> D;
+              U -> M}")
+plot(tmc)
+```
+
+```{r twoMomWithConfound}
+set.seed(1887)
+N <- 200
+U <- rnorm(N)
+B1 <- rbinom(N, size=1, prob=0.5)
+M <- rnorm(N, 2*B1 + U)
+B2 <- rbinom(N, size=1, prob=0.5)
+D <- rnorm(N, 2*B2 + U + 0*M )
+
+# fit the regression models
+summary(lm(D ~ M))
+summary(lm(D ~ M + B1))
+summary(lm(D ~ M + B2))
+summary(lm(D ~ M + B1 + B2))
+
+plot(coeftab(lm(D ~ M),
+             lm(D ~ M + B1),
+             lm(D ~ M + B2),
+             lm(D ~ M + B1 + B2)),
+              pars="M")
+```
+
+Now a model including B1 is seriously wrong.
+
+We look at the Akaike Infomation Criterion (AIC), a commonly used estimator of prediction error and a quality-control tool of statistical models for a  given set of data, of the models. Having B1 or not has no significant effect.
+
+```{r aic}
+AIC(lm(D ~ M))
+AIC(lm(D ~ M + B1))
+```
+
+## The Bayesian inference method
+
+Best scenario: the confound is observed. In reality this is probably difficult.
+
+```{r}
+precis(lm(D ~ M + B2 + U))
+```
+
+What can Bayesian inference bring us if the confounding factor is not observable? Below we build a STAN model specifying the DAG above, in particular the unmeasured confound U, as well as the priors. Then the model runs to derive posterior distribution of the parameters. FBI=full bayesian inference (replacing Richar'ds Full Luxury Bayesian Inference, flbi).
+
+```{r stan}
+dat <- list(N=N,M=M,D=D,B1=B1,B2=B2)
+set.seed(1887)
+fbi <- ulam(
+    alist(
+        # mom model
+            M ~ normal( mu , sigma ),
+            mu <- a1 + b*B1 + k*U[i],
+        # daughter model
+            D ~ normal( nu , tau ),
+            nu <- a2 + b*B2 + m*M + k*U[i],
+        # B1 and B2
+            B1 ~ bernoulli(p),
+            B2 ~ bernoulli(p),
+        # unmeasured confound
+            vector[N]:U ~ normal(0,1),
+        # priors
+            c(a1,a2,b,m) ~ normal( 0 , 0.5 ),
+            c(k,sigma,tau) ~ exponential( 1 ),
+            p ~ beta(2,2)
+    ), data=dat , chains=4 , cores=4 , iter=2000 , cmdstan=TRUE )
+
+precis(fbi)
+```
+
+Comparing the results of Bayesian inference and linear regressions above.
+
+```{r}
+m <- M
+plot( coeftab( lm( D ~ m ) , lm( D ~ m + B1 ) ,  lm( D ~ m + B2 ) , fbi ) , pars="m" )
+```
+
+A strength of a Bayesian inference model is that it is a generative model, which means that we can extract or draw samples from the fit models. We can compare simulated with estimated confounding factors.
+
+```{r}
+post <- extract.samples(fbi)
+Uest <- apply(post$U,2,mean) 
+{
+  blank()
+  plot(U, Uest, xlab="U (simulated)",ylab="U (estimated)", col=2 , lwd=2 )
+  abline(a=0,b=1,lty=2)
+}
+```
+
+Alternative to setting up an explicit term for the unobserved confounding factor, we can also assume that mom and daughter are multi-normally distributed.
+
+```{r}
+# version that marginalizes out the missing data
+fbi_plus <- ulam(
+    alist(
+        c(M,D) ~ multi_normal( c(mu,nu) , Rho , Sigma ),
+        mu <- a1 + b*B1,
+        nu <- a2 + b*B2 + m*M,
+        c(a1,a2,b,m) ~ normal( 0 , 0.5 ),
+        Rho ~ lkj_corr( 2 ),
+        Sigma ~ exponential( 1 )
+    ), data=dat , chains=4 , cores=4 , cmdstan=TRUE )
+
+precis(fbi_plus,3)
+```
+
+Below is a more exotic example, where there is no instrument variable (B1 -> D), but two measures of U (V and W)
+```{r}
+set.seed(1887)
+N <- 200 # number of pairs
+U <- rnorm(N,0,1) # simulate confound
+V <- rnorm(N,U,1)
+W <- rnorm(N,U,1)
+# birth order and family sizes
+B1 <- rbinom(N,size=1,prob=0.5) # 50% first borns
+M <- rnorm( N , 2*B1 + U )
+B2 <- rbinom(N,size=1,prob=0.5)
+D <- rnorm( N , 2*B2 + 0.5*B1 + U + 0*M )
+
+# confounded regression
+precis( lm( D ~ M + B1 + B2 + V + W ) )
+
+# full-luxury bayesian inference
+dat2 <- list(N=N,M=M,D=D,B1=B1,B2=B2,V=V,W=W)
+fbi2 <- ulam(
+    alist(
+        M ~ normal( muM , sigmaM ),
+        muM <- a1 + b*B1 + k*U[i],
+        D ~ normal( muD , sigmaD ),
+        muD <- a2 + b*B2 + d*B1 + m*M + k*U[i],
+        W ~ normal( muW , sigmaW ),
+        muW <- a3 + w*U[i],
+        V ~ normal( muV , sigmaV ),
+        muV <- a4 + v*U[i],
+        vector[N]:U ~ normal(0,1),
+        c(a1,a2,a3,a4,b,d,m) ~ normal( 0 , 0.5 ),
+        c(k,w,v) ~ exponential( 1 ),
+        c(sigmaM,sigmaD,sigmaW,sigmaV) ~ exponential( 1 )
+    ), data=dat2 , chains=4 , cores=4 , iter=2000 , cmdstan=TRUE )
+
+precis(fbi2)
+```
+
+# The peer bias example
+
+To finish.
