@@ -11,12 +11,167 @@ This document walks through the models introduced in the causal inference worksh
 * [The original R script posted on GitHub](https://github.com/rmcelreath/causal_salad_2021/blob/main/1_causal_salad.r)
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.height = 4, 
+                      fig.width = 4)
+library(ribiosUtils)
+library(ribiosIO)
 library(rethinking)
 library(dagitty)
+library(ggplot2)
+library(ggdag)
 library(cmdstanr) ## installation instructions available at https://mc-stan.org/cmdstanr/articles/cmdstanr.html
+library(ggpmisc)
+library(ggthemes)
+library(gridExtra)
+ggplot2::theme_set(theme_minimal(base_size=14))
 ```
 
+# Basics
+
+## The simplest relation: two variables, one causing the other
+
+```{r}
+set.seed(1887)
+N <- 50
+x <- rnorm(N, mean=0)
+y <- rnorm(N, mean=x*2)
+xydata <- data.frame(x=x, y=y)
+xylm <- lm(y~x, data=xydata)
+my.formula <- y ~ x
+ggplot(xydata, aes(x=x, y=y)) + geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  ggtitle("True effect: 2.0")
+```
+
+```{r fig.height=3, fig.width=5}
+{
+  
+  plot(coeftab(lm(y ~ x, data=xydata),
+               lm(y ~ 0 + x, data=xydata)), pars="x")
+  abline(v=2, lty=2)
+}
+```
+
+```{r model0, fig.height=3, fig.width=3}
+set.seed(1887)
+model0 <- dagify(y ~ x,
+                 exposure = "x",
+                 outcome = "y")
+model0 <- tidy_dagitty(model0,
+                       layout="linear")
+ggplot(model0, aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_dag_point() +
+      geom_dag_edges_fan() +
+      geom_dag_text(size=12, vjust=0.3) +
+      theme_dag()
+```
+What happens if we switch target variable with the random variable? Well 
+
+```{r}
+ggplot(xydata, aes(x=y, y=x)) + geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+                        eq.x.rhs = "y",
+               eq.with.lhs = "italic(hat(x))~`=`~",
+               aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  ggtitle("The reverse fit")
+```
+
+
+## A binary case
+
+```{r}
+set.seed(1887)
+N <- 50
+x <- rbern(N, prob=0.5)
+y <- rnorm(N, mean=x*2)
+xybid <- data.frame(x=x, y=y)
+ggplot(xybid, aes(x=x, y=y)) + geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  ggtitle("True effect: 2.0")
+```
+
+## A chain
+
+```{r, fig.height=3, fig.width=9}
+set.seed(1888)
+N <- 50
+x <- rnorm(N)
+z <- ifelse(x<0, -1, 1)
+y <- rnorm(N, mean=z*1.5)
+xzydata <- data.frame(x=x, z=z, y=y)
+xz.formula <- z ~ x
+zy.formula <- y ~ z
+xzPlot <- ggplot(xzydata, aes(x=x, y=z)) + geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(z))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  ggtitle("True effect: 2.0")
+zyPlot <- ggplot(xzydata, aes(x=z, y=y)) + geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+                        eq.x.rhs = "z",
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  ggtitle("True effect: 1.5")
+xyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  ggtitle("True effect: 3.0")
+grid.arrange(grobs=list(xzPlot, zyPlot, xyPlot), nrow=1, ncol=3)
+```
+
+```{r model0, fig.height=3, fig.width=3}
+set.seed(1888)
+model1 <- dagify(z ~ x,
+                 y ~ z,
+                 exposure = "x",
+                 outcome="y") %>%
+  tidy_dagitty(layout="linear")
+ggplot(model1, aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_dag_point() +
+      geom_dag_edges_link() +
+      geom_dag_text(size=12, vjust=0.3) +
+      theme_dag()
+```
+## A collider
+
+```{r, fig.height=3, fig.width=9}
+set.seed(1888)
+N <- 50
+x <- rnorm(N)
+y <- rnorm(N)
+z <- ifelse(x+y>0, 1, -1)
+xzydata <- data.frame(x=x, z=z, y=y)
+xz.formula <- z ~ x
+zy.formula <- y ~ z
+xyPlot <- ggplot(filter(xzydata, z==1), aes(x=x, y=y)) + geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+    geom_point(data=filter(xzydata, z==-1), mapping=aes(x=x, y=y), col="mistyrose",
+             inherit.aes = FALSE) +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE)
+
+grid.arrange(grobs=list(xzPlot, zyPlot, xyPlot), nrow=1, ncol=3)
+```
 # The two moms example
 
 ```{r, fig.height=3, fig.width=3}
