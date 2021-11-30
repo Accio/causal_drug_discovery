@@ -290,6 +290,15 @@ xyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
   stat_quant_band(formula = y~x)
 grid.arrange(grobs=list(xyPlot, xyCondZPlot), nrow=1, ncol=2)
 ```
+```{r}
+View(xzydata)
+```
+
+
+```{r}
+xyzPlot <- ggplot(xzydata, aes(x=x+y, y=z)) + geom_point()
+print(xyzPlot)
+```
 
 # The two moms example
 
