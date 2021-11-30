@@ -87,9 +87,49 @@ yCausesX <- ggplot(model0r, aes(x = x, y = y, xend = xend, yend = yend)) +
 print(yCausesX)
 ```
 
+Yet another possibility by the Reichenbach causality theorem is that both X and Y are regulated by a common cause U.
+
+```{r latent}
+set.seed(1887)
+latmod <- dagify(x ~ u,
+                 y ~ u,
+                 latent  = "u",
+                 coords = list(x = c(x=0, u=1, y=2),
+                               y= c(x=0, u=0, y=0))) %>%
+  tidy_dagitty(layout="auto")
+latmodPlot <- ggplot(latmod %>%
+  dplyr::mutate(latent = ifelse(name %in% "u", TRUE, FALSE)),
+  aes(x = x, y = y, xend = xend, yend = yend, color=latent)) +
+  scale_color_manual(values=c("black", "lightgrey"), guide="none") +
+      geom_dag_point() +
+      geom_dag_edges_fan() +
+      geom_dag_text(size=12, vjust=0.3, color="white") +
+      theme_dag()
+print(latmodPlot)
+```
+
+```{r latmodSim}
+set.seed(1887)
+N <- 50
+u <- rnorm(N, mean=5)
+x <- rnorm(N, mean=u)
+y <- rnorm(N, mean=u*2)
+xyudata <- data.frame(x=x, y=y, u=u)
+xyulm <- lm(y~x, data=xyudata)
+my.formula <- y ~ x
+uyxPlot <- ggplot(xyudata, aes(x=x, y=y)) + geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  ggtitle("True effect: 0.0")
+print(uyxPlot)
+```
+
 What happens if we switch target variable with the random variable? Well, we get an equally well fit.
 
-```{r fig.width=6.5, fig.height=3.25}
+```{r fig.width=9.75, fig.height=3.25}
 xyPlot <- ggplot(xydata, aes(x=y, y=x)) + geom_point() +
   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
@@ -98,7 +138,7 @@ xyPlot <- ggplot(xydata, aes(x=y, y=x)) + geom_point() +
                aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
   ggtitle("The reverse fit")
-grid.arrange(grobs=list(yxPlot, xyPlot), nrow=1, ncol=2)
+grid.arrange(grobs=list(yxPlot, xyPlot, uyxPlot), nrow=1, ncol=3)
 ```
 
 ```{r learningCausal}
@@ -205,6 +245,21 @@ ggplot(modelFork, aes(x = x, y = y, xend = xend, yend = yend)) +
       geom_dag_text(size=12, vjust=0.3) +
       theme_dag()
 ```
+```{r linearFork, fig.height=3, fig.width=3}
+set.seed(1887)
+lfmod <- dagify(x ~ z,
+                y ~ z,
+                 coords = list(x = c(x=0, z=1, y=2),
+                               y= c(x=0, z=0, y=0))) %>%
+  tidy_dagitty(layout="auto")
+lfmodPlot <- ggplot(lfmod,
+                    aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_dag_point() +
+      geom_dag_edges_fan() +
+      geom_dag_text(size=12, vjust=0.3, color="white") +
+      theme_dag()
+print(lfmodPlot)
+```
 
 ```{r forkFit, fig.height=3, fig.width=7}
 set.seed(1888)
@@ -264,6 +319,21 @@ ggplot(modelCollider, aes(x = x, y = y, xend = xend, yend = yend)) +
       geom_dag_text(size=12, vjust=0.3) +
       theme_dag()
 ```
+```{r linearCollider, fig.height=3, fig.width=3}
+set.seed(1887)
+lcmod <- dagify(z ~ x,
+                z ~ y,
+                 coords = list(x = c(x=0, z=1, y=2),
+                               y= c(x=0, z=0, y=0))) %>%
+  tidy_dagitty(layout="auto")
+lcmodPlot <- ggplot(lcmod,
+                    aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_dag_point() +
+      geom_dag_edges_fan() +
+      geom_dag_text(size=12, vjust=0.3, color="white") +
+      theme_dag()
+print(lcmodPlot)
+```
 
 ```{r colliderFit, fig.height=3, fig.width=7}
 set.seed(1888)
@@ -298,6 +368,25 @@ View(xzydata)
 ```{r}
 xyzPlot <- ggplot(xzydata, aes(x=x+y, y=z)) + geom_point()
 print(xyzPlot)
+```
+## Descendent
+
+```{r descend, fig.height=3, fig.width=3}
+set.seed(1887)
+ldmod <- dagify(u ~ x,
+                u ~ y,
+                z ~ u,
+                 coords = list(x = c(x=0, u=1, z=1, y=2),
+                               y= c(x=0, u=0, z=-1, y=0))) %>%
+  tidy_dagitty(layout="auto")
+ldmodPlot <- ggplot(ldmod,
+                    aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_dag_point() +
+      geom_dag_edges_fan() +
+  ylim(-2,0.5)+
+      geom_dag_text(size=12, vjust=0.3, color="white") +
+      theme_dag()
+print(ldmodPlot)
 ```
 
 # The two moms example
