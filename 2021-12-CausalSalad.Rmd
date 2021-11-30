@@ -34,46 +34,63 @@ ggplot2::theme_set(theme_minimal(base_size=14))
 ```{r}
 set.seed(1887)
 N <- 50
-x <- rnorm(N, mean=0)
+x <- rnorm(N, mean=5)
 y <- rnorm(N, mean=x*2)
 xydata <- data.frame(x=x, y=y)
 xylm <- lm(y~x, data=xydata)
 my.formula <- y ~ x
-ggplot(xydata, aes(x=x, y=y)) + geom_point() +
+yxPlot <- ggplot(xydata, aes(x=x, y=y)) + geom_point() +
   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
   ggtitle("True effect: 2.0")
+print(yxPlot)
+```
+
+```{r}
+View(xydata)
 ```
 
 ```{r fig.height=3, fig.width=5}
-{
-  
-  plot(coeftab(lm(y ~ x, data=xydata),
-               lm(y ~ 0 + x, data=xydata)), pars="x")
-  abline(v=2, lty=2)
-}
+summary(lm(y ~ x, data=xydata))
 ```
 
-```{r model0, fig.height=3, fig.width=3}
+```{r xCy, fig.height=3, fig.width=3}
 set.seed(1887)
 model0 <- dagify(y ~ x,
                  exposure = "x",
                  outcome = "y")
 model0 <- tidy_dagitty(model0,
                        layout="linear")
-ggplot(model0, aes(x = x, y = y, xend = xend, yend = yend)) +
+xCausesY <- ggplot(model0, aes(x = x, y = y, xend = xend, yend = yend)) +
       geom_dag_point() +
       geom_dag_edges_fan() +
       geom_dag_text(size=12, vjust=0.3) +
       theme_dag()
+print(xCausesY)
 ```
-What happens if we switch target variable with the random variable? Well 
 
-```{r}
-ggplot(xydata, aes(x=y, y=x)) + geom_point() +
+```{r yCx, fig.height=3, fig.width=3}
+set.seed(1887)
+model0r <- dagify(x ~ y,
+                 exposure = "y",
+                 outcome = "x")
+model0r <- tidy_dagitty(model0r,
+                       layout="linear")
+yCausesX <- ggplot(model0r, aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_dag_point() +
+      geom_dag_edges_fan() +
+      geom_dag_text(size=12, vjust=0.3) +
+      theme_dag()
+print(yCausesX)
+```
+
+What happens if we switch target variable with the random variable? Well, we get an equally well fit.
+
+```{r fig.width=6.5, fig.height=3.25}
+xyPlot <- ggplot(xydata, aes(x=y, y=x)) + geom_point() +
   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                         eq.x.rhs = "y",
@@ -81,8 +98,27 @@ ggplot(xydata, aes(x=y, y=x)) + geom_point() +
                aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
   ggtitle("The reverse fit")
+grid.arrange(grobs=list(yxPlot, xyPlot), nrow=1, ncol=2)
 ```
 
+```{r learningCausal}
+set.seed(1887)
+xknock <- rnorm(3, mean=1, sd=0.5)
+xCauseYpred <- data.frame(x=xknock, 
+                          y=predict(lm(y~x, data=xydata), newdata=list(x=xknock)))
+yCauseXpred <- data.frame(x=xknock, y=rnorm(3, mean=median(xydata$y)))
+
+ggplot(xydata, aes(x=x, y=y)) + geom_point() +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+                        eq.x.rhs = "y",
+               eq.with.lhs = "italic(hat(x))~`=`~",
+               aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  xlim(0, 8) + ylim(0, 16) +
+  geom_vline(xintercept=1, lty=2) +
+  geom_point(data=xCauseYpred, col="red", shape=8, cex=4) +
+  geom_point(data=yCauseXpred, col="navyblue", shape=4, cex=4)
+```
 
 ## A binary case
 
@@ -91,8 +127,8 @@ set.seed(1887)
 N <- 50
 x <- rbern(N, prob=0.5)
 y <- rnorm(N, mean=x*2)
-xybid <- data.frame(x=x, y=y)
-ggplot(xybid, aes(x=x, y=y)) + geom_point() +
+xybid <- data.frame(x=factor(x), y=y)
+ggplot(xybid, aes(x=x, y=y)) + geom_boxplot() + geom_point() + 
   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
@@ -106,8 +142,8 @@ ggplot(xybid, aes(x=x, y=y)) + geom_point() +
 ```{r, fig.height=3, fig.width=9}
 set.seed(1888)
 N <- 50
-x <- rnorm(N)
-z <- ifelse(x<0, -1, 1)
+x <- rnorm(N, mean=5)
+z <- ifelse(x<5, -1, 1)
 y <- rnorm(N, mean=z*1.5)
 xzydata <- data.frame(x=x, z=z, y=y)
 xz.formula <- z ~ x
@@ -117,61 +153,144 @@ xzPlot <- ggplot(xzydata, aes(x=x, y=z)) + geom_point() +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(z))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
-               parse = TRUE) +
-  ggtitle("True effect: 2.0")
+               parse = TRUE)
 zyPlot <- ggplot(xzydata, aes(x=z, y=y)) + geom_point() +
   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                         eq.x.rhs = "z",
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
-               parse = TRUE) +
-  ggtitle("True effect: 1.5")
+               parse = TRUE)
 xyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
   geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
-               parse = TRUE) +
-  ggtitle("True effect: 3.0")
+               parse = TRUE)
 grid.arrange(grobs=list(xzPlot, zyPlot, xyPlot), nrow=1, ncol=3)
 ```
 
-```{r model0, fig.height=3, fig.width=3}
+```{r chainCondition}
+chainYvX <- lm(y~x, data=xzydata)
+chainYvXcZ <- lm(y~x+z, data=xzydata)
+with(xzydata,
+     plot(coeftab(lm(y ~ x),
+                  lm(y ~ x + z)),
+              pars="x"))
+```
+
+```{r chainModel, fig.height=3, fig.width=3}
 set.seed(1888)
-model1 <- dagify(z ~ x,
+chainModel <- dagify(z ~ x,
                  y ~ z,
                  exposure = "x",
                  outcome="y") %>%
   tidy_dagitty(layout="linear")
-ggplot(model1, aes(x = x, y = y, xend = xend, yend = yend)) +
+ggplot(chainModel, aes(x = x, y = y, xend = xend, yend = yend)) +
       geom_dag_point() +
       geom_dag_edges_link() +
       geom_dag_text(size=12, vjust=0.3) +
       theme_dag()
 ```
+## A fork
+
+```{r modelFork, fig.height=3, fig.width=3}
+set.seed(1888)
+modelFork <- dagify(y ~ z,
+                    x ~ z)%>%
+  tidy_dagitty(seed=2, layout="tree")
+ggplot(modelFork, aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_dag_point() +
+      geom_dag_edges_link() +
+      geom_dag_text(size=12, vjust=0.3) +
+      theme_dag()
+```
+
+```{r forkFit, fig.height=3, fig.width=7}
+set.seed(1888)
+N <- 50
+z <- rbern(50, 0.5)
+x <- rnorm(N, mean=z)
+y <- rnorm(N, mean=z)
+xzydata <- data.frame(x=x, z=factor(z), y=y)
+xz.formula <- z ~ x
+zy.formula <- y ~ z
+xyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  stat_quant_band(formula = y~x)
+xyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
+  geom_point() +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  stat_quant_band(formula = y~x)
+
+grid.arrange(grobs=list(xyPlot, xyCondZPlot), nrow=1, ncol=2)
+```
+```{r fig.height=3, fig.width=4.5}
+xzPlot <- ggplot(xzydata, aes(x=z, y=x)) + geom_boxplot() + geom_point() + 
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(x))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  ggtitle("True effect: 1.0")
+yzPlot <- ggplot(xzydata, aes(x=z, y=y)) + geom_boxplot() + geom_point() + 
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  ggtitle("True effect: 1.0")
+grid.arrange(grobs=list(xzPlot, yzPlot), nrow=1, ncol=2)
+```
+
+```{r}
+View(xzydata)
+```
+
 ## A collider
 
-```{r, fig.height=3, fig.width=9}
+```{r modelCollide, fig.height=3, fig.width=3}
+set.seed(1888)
+modelCollider <- dagify(z ~ x,
+                 z ~ y) %>%
+  tidy_dagitty(layout="sugiyama")
+ggplot(modelCollider, aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_dag_point() +
+      geom_dag_edges_link() +
+      geom_dag_text(size=12, vjust=0.3) +
+      theme_dag()
+```
+
+```{r colliderFit, fig.height=3, fig.width=7}
 set.seed(1888)
 N <- 50
 x <- rnorm(N)
 y <- rnorm(N)
 z <- ifelse(x+y>0, 1, -1)
-xzydata <- data.frame(x=x, z=z, y=y)
+xzydata <- data.frame(x=x, z=factor(z), y=y)
 xz.formula <- z ~ x
 zy.formula <- y ~ z
-xyPlot <- ggplot(filter(xzydata, z==1), aes(x=x, y=y)) + geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
-    geom_point(data=filter(xzydata, z==-1), mapping=aes(x=x, y=y), col="mistyrose",
+xyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  stat_quant_band(formula = y~x)
+xyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
+  geom_point(data=filter(xzydata, z==-1), mapping=aes(x=x, y=y), col="mistyrose",
              inherit.aes = FALSE) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
-               parse = TRUE)
-
-grid.arrange(grobs=list(xzPlot, zyPlot, xyPlot), nrow=1, ncol=3)
+               parse = TRUE) +
+  stat_quant_band(formula = y~x)
+grid.arrange(grobs=list(xyPlot, xyCondZPlot), nrow=1, ncol=2)
 ```
+
 # The two moms example
 
 ```{r, fig.height=3, fig.width=3}
