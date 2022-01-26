@@ -2,3 +2,4 @@
 dowhy
 .ipynb_checkpoints
 *.html
+.Rhistory
