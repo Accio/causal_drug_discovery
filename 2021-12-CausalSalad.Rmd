@@ -596,9 +596,6 @@ precis( glm( Y ~ X + E , family=binomial ) )
 
 
 ```{r peer, eval=FALSE}
-
-
-
 mg0 <- glm( Y ~ X , family=binomial )
 mg1 <- glm( Y ~ X + E , family=binomial )
 plot( coeftab( mg0 , mg1 ) , pars="X" )
