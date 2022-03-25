@@ -1,7 +1,11 @@
-Causal inference with Python and R
+CI4D3: Causal Inference for Drug Discovery and Development
 ===
 
-This repository contains examples for doing causal inference with Python and R.
+We offer practitioners of drug discovery and development reproducible tutorials for doing causal inference with Python and R. It accompanies a review article on the same topic which will be published soon.
+
+The repository is currently being actively updated. Feedback through issues and pull requests are welcome.
+
+The repository is shared with the CC-BY 4.0 license.
 
 ## Causal inference with DoWhy package in Python
 
