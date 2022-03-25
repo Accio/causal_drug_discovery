@@ -1,5 +1,6 @@
-CI4D3: Causal Inference for Drug Discovery and Development
+CI4D3: Causal Inference For Drug Discovery and Development
 ===
+Jitao David Zhang, Tom Michoel, Zhiwen Jiang
 
 We offer practitioners of drug discovery and development reproducible tutorials for doing causal inference with Python and R. It accompanies a review article on the same topic which will be published soon.
 
