@@ -1,4 +1,4 @@
-Ci4d3: Causal inference for drug discovery and development
+Causal inference for drug discovery and development
 ===
 Jitao David Zhang
 
