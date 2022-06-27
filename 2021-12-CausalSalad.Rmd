@@ -42,13 +42,19 @@ xydata <- data.frame(x=x, y=y)
 xylm <- lm(y~x, data=xydata)
 my.formula <- y ~ x
 yxPlot <- ggplot(xydata, aes(x=x, y=y)) + geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  geom_smooth(method = "lm", se=FALSE, color="darkgray", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
+               coef.digits=2, rr.digits=2,
                parse = TRUE) +
   ggtitle("True effect: 2.0")
 print(yxPlot)
+```
+
+```{r}
+yxPlainPlot <- ggplot(xydata, aes(x=x, y=y)) + geom_point()
+print(yxPlainPlot)
 ```
 
 ```{r}
@@ -120,10 +126,11 @@ xyudata <- data.frame(x=x, y=y, u=u)
 xyulm <- lm(y~x, data=xyudata)
 my.formula <- y ~ x
 uyxPlot <- ggplot(xyudata, aes(x=x, y=y)) + geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  geom_smooth(method = "lm", se=FALSE, color="darkgray", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
+               coef.digits=2, rr.digits=2,
                parse = TRUE) +
   ggtitle("True effect: 0.0")
 print(uyxPlot)
@@ -133,15 +140,18 @@ What happens if we switch target variable with the random variable? Well, we get
 
 ```{r fig.width=9.75, fig.height=3.25}
 xyPlot <- ggplot(xydata, aes(x=y, y=x)) + geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  geom_smooth(method = "lm", se=FALSE, color="darkgray", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                         eq.x.rhs = "y",
                eq.with.lhs = "italic(hat(x))~`=`~",
                aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
+               coef.digits=2, rr.digits=2,
                parse = TRUE) +
   ggtitle("The reverse fit")
 grid.arrange(grobs=list(yxPlot, xyPlot, uyxPlot), nrow=1, ncol=3)
 ```
+
+Learning causality from correlation needs experiments.
 
 ```{r learningCausal}
 set.seed(1887)
@@ -150,16 +160,12 @@ xCauseYpred <- data.frame(x=xknock,
                           y=predict(lm(y~x, data=xydata), newdata=list(x=xknock)))
 yCauseXpred <- data.frame(x=xknock, y=rnorm(3, mean=median(xydata$y)))
 
-ggplot(xydata, aes(x=x, y=y)) + geom_point() +
-  ggpmisc::stat_poly_eq(formula = my.formula,
-                        eq.x.rhs = "y",
-               eq.with.lhs = "italic(hat(x))~`=`~",
-               aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
-               parse = TRUE) +
+expLearnCausal <- ggplot(xydata, aes(x=x, y=y)) + geom_point() +
   xlim(0, 8) + ylim(0, 16) +
   geom_vline(xintercept=1, lty=2) +
   geom_point(data=xCauseYpred, col="red", shape=8, cex=4) +
   geom_point(data=yCauseXpred, col="navyblue", shape=4, cex=4)
+print(expLearnCausal)
 ```
 
 ## A binary case
@@ -171,7 +177,7 @@ x <- rbern(N, prob=0.5)
 y <- rnorm(N, mean=x*2)
 xybid <- data.frame(x=factor(x), y=y)
 ggplot(xybid, aes(x=x, y=y)) + geom_boxplot() + geom_point() + 
-  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  geom_smooth(method = "lm", se=FALSE, color="darkgray", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
@@ -191,25 +197,25 @@ xzydata <- data.frame(x=x, z=z, y=y)
 xz.formula <- z ~ x
 zy.formula <- y ~ z
 xzPlot <- ggplot(xzydata, aes(x=x, y=z)) + geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  geom_smooth(method = "lm", se=FALSE, color="darkgray", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(z))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE)
 zyPlot <- ggplot(xzydata, aes(x=z, y=y)) + geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  geom_smooth(method = "lm", se=FALSE, color="darkgray", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                         eq.x.rhs = "z",
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE)
-xyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+xyWoZPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="darkgray", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE)
-grid.arrange(grobs=list(xzPlot, zyPlot, xyPlot), nrow=1, ncol=3)
+grid.arrange(grobs=list(xzPlot, zyPlot, xyWoZPlot), nrow=1, ncol=3)
 ```
 
 ```{r chainCondition}
@@ -272,13 +278,13 @@ y <- rnorm(N, mean=z)
 xzydata <- data.frame(x=x, z=factor(z), y=y)
 xz.formula <- z ~ x
 zy.formula <- y ~ z
-xyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
+forkXyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
   stat_quant_band(formula = y~x)
-xyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
+forkXyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
   geom_point() +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
@@ -286,8 +292,9 @@ xyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
                parse = TRUE) +
   stat_quant_band(formula = y~x)
 
-grid.arrange(grobs=list(xyPlot, xyCondZPlot), nrow=1, ncol=2)
+grid.arrange(grobs=list(forkXyPlot, forkXyCondZPlot), nrow=1, ncol=2)
 ```
+
 ```{r fig.height=3, fig.width=4.5}
 xzPlot <- ggplot(xzydata, aes(x=z, y=x)) + geom_boxplot() + geom_point() + 
   ggpmisc::stat_poly_eq(formula = my.formula,
@@ -346,13 +353,13 @@ z <- ifelse(x+y>0, 1, -1)
 xzydata <- data.frame(x=x, z=factor(z), y=y)
 xz.formula <- z ~ x
 zy.formula <- y ~ z
-xyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
+colXyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
   stat_quant_band(formula = y~x)
-xyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
+colXyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
   geom_point(data=filter(xzydata, z==-1), mapping=aes(x=x, y=y), col="mistyrose",
              inherit.aes = FALSE) +
   ggpmisc::stat_poly_eq(formula = my.formula,
@@ -360,7 +367,7 @@ xyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
   stat_quant_band(formula = y~x)
-grid.arrange(grobs=list(xyPlot, xyCondZPlot), nrow=1, ncol=2)
+grid.arrange(grobs=list(colXyPlot, colXyCondZPlot), nrow=1, ncol=2)
 ```
 ```{r}
 View(xzydata)
@@ -389,6 +396,26 @@ ldmodPlot <- ggplot(ldmod,
       geom_dag_text(size=12, vjust=0.3, color="white") +
       theme_dag()
 print(ldmodPlot)
+```
+# A summary figure of causal inference
+
+```{r, fig.height=8, fig.width=8}
+library(cowplot)
+removeTitle <- function(gg) {
+  return(gg + theme(plot.title=element_blank()))
+}
+ggdraw() + 
+  draw_plot(yxPlainPlot, x=0.05, y=.75, width=.25, height=0.25) +
+  draw_plot(xCausesY, x=0.35, y=0.91, width=.4, height=0.1, scale=1) +
+  draw_plot(yCausesX, x=0.35, y=0.833, width=.4, height=0.1, scale=1) +
+  draw_plot(latmodPlot, x=0.35, y=0.75, width=.4, height=0.1, scale=1) +
+  draw_plot(removeTitle(yxPlot), 
+            x=0, y=0.375, width=.375, height=0.375) +
+  draw_plot(removeTitle(xyPlot), x=0.375, y=0.375, width=.375, height=0.375) +
+  draw_plot(expLearnCausal, x=0.1875, y=0, width=.375, height=.375) +
+  draw_plot_label(label = c("A", "B", "C", "D", "E", "F", "G"), size = 15,
+                  x = c(0, .33, 0.33, 0.33, 0, 0.375, 0.1875), 
+                  y = c(1, 1, 0.93, 0.85, 0.75, 0.75, 0.375))
 ```
 
 # The two moms example
