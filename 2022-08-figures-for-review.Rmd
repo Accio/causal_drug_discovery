@@ -49,9 +49,23 @@ pubByYear <- ggplot(pubmed,
 print(pubByYear)
 ```
 
-## Publication by phases of drug discovery and development
+## Publication by activities of drug discovery and development
 
 ```{r}
-phase <- openxlsx::read.xlsx("data/2022-05-31-causal-inference-in-drug-discovery-PubMed.xlsx", cols=1:5)
+activity <- openxlsx::read.xlsx("data/2022-05-31-causal-inference-in-drug-discovery-PubMed.xlsx", cols=1:5) %>% dplyr::filter(Manual.classification != "Other")
+
+activity_summ <- activity %>% dplyr::select(Manual.classification) %>%
+  dplyr::group_by(Manual.classification) %>%
+  dplyr::summarise(n=dplyr::n()) %>%
+  dplyr::arrange(desc(n)) %>%
+  dplyr::mutate(Manual.classification = ribiosUtils::ofactor(Manual.classification))
 ```
+
+```{r activity, fig.height=5, fig.width=6}
+ggplot(activity_summ, aes(x=Manual.classification, y=n)) +
+  geom_bar(stat="identity", fill="lightblue", col="black") +
+  theme(axis.text.x = element_text(angle=90)) +
+  coord_flip()
+```
+
 
