@@ -21,6 +21,7 @@ library(readr)
 library(tidyr)
 library(dplyr)
 library(openxlsx)
+library(cowplot)
 ggplot2::theme_set(theme_minimal(base_size=14))
 ```
 
@@ -62,10 +63,21 @@ activity_summ <- activity %>% dplyr::select(Manual.classification) %>%
 ```
 
 ```{r activity, fig.height=5, fig.width=6}
-ggplot(activity_summ, aes(x=Manual.classification, y=n)) +
+activityPlot <- ggplot(activity_summ, aes(x=Manual.classification, y=n)) +
   geom_bar(stat="identity", fill="lightblue", col="black") +
-  theme(axis.text.x = element_text(angle=90)) +
+  ##theme(axis.text.x = element_text(angle=90)) +
+  xlab("Activities") + ylab("PubMed publications") +
   coord_flip()
+print(activityPlot)
+```
+
+```{r combFig, fig.height=7, fig.width=6}
+ggdraw() + 
+  draw_plot(pubByYear, x=0.05, y=.625, width=.95, height=0.375) +
+  draw_plot(activityPlot, x=0.05, y=0.0, width=.95, height=0.625, scale=1) +
+  draw_plot_label(label = c("A", "B"), size = 15,
+                  x = c(0, 0), 
+                  y = c(1, 0.625))
 ```
 
 
