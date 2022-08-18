@@ -13,27 +13,45 @@ knitr::opts_chunk$set(echo = TRUE,
                       dev = c("png", "pdf"))
 library(ribiosUtils)
 library(ribiosIO)
-library(rethinking)
 library(ggplot2)
 library(ggpmisc)
 library(ggthemes)
 library(gridExtra)
 library(readr)
 library(tidyr)
+library(dplyr)
+library(openxlsx)
 ggplot2::theme_set(theme_minimal(base_size=14))
 ```
 
-## Publication
+## Publication by keywords and by year
 
 ```{r pubByYear, fig.width=6, fig.height=3}
 pubmed_wide <- read_csv("data/2022-06-PubMed-by-Year.csv")
 pubmed <- pubmed_wide %>%
-  pivot_longer(cols=c("causal drug discovery",
+  tidyr::pivot_longer(cols=c("causal drug discovery",
                       "machine learning drug discovery",
-                      "artificial intelligence drug discovery"))
-ggplot(pubmed, aes(x=Year, y=value, color=name, group=name)) +
+                      "artificial intelligence drug discovery"),
+               names_to="keyword") %>%
+  dplyr::mutate(keyword = gsub(" drug discovery", "", keyword)) %>%
+  dplyr::mutate(keyword = replace(keyword, keyword=="causal",
+                                  "causal inference")) %>%
+  dplyr::mutate(keyword=factor(keyword,
+                        c("causal inference", 
+                          "machine learning", "artificial intelligence")))
+pubByYear <- ggplot(pubmed, 
+       aes(x=Year, y=value, color=keyword, group=keyword)) +
   geom_point() +
   geom_path() +
-  xlim(1990, 2022)
+  xlim(1990, 2022) +
+  ylab("Publications per 100,000") +
+  scale_color_manual(values=c("limegreen", "orange", "red"))
+print(pubByYear)
+```
+
+## Publication by phases of drug discovery and development
+
+```{r}
+phase <- openxlsx::read.xlsx("data/2022-05-31-causal-inference-in-drug-discovery-PubMed.xlsx", cols=1:5)
 ```
 
