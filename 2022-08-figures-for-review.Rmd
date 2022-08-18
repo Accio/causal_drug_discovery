@@ -71,7 +71,7 @@ activityPlot <- ggplot(activity_summ, aes(x=Manual.classification, y=n)) +
 print(activityPlot)
 ```
 
-```{r combFig, fig.height=7, fig.width=6}
+```{r CombinedPublicationFigure, fig.height=7, fig.width=6}
 ggdraw() + 
   draw_plot(pubByYear, x=0.05, y=.625, width=.95, height=0.375) +
   draw_plot(activityPlot, x=0.05, y=0.0, width=.95, height=0.625, scale=1) +
