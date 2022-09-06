@@ -1,7 +1,7 @@
-*.png
+#*.png
 dowhy
 .ipynb_checkpoints
-*.html
+#*.html
 .Rhistory
 .RData
-figures
+#figures

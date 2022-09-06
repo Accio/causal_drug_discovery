@@ -42,3 +42,6 @@ python -m ipykernel install --user --name causal --display-name "causality"
 
 See [2021-12-CausalSalad.Rmd](2021-12-CausalSalad.Rmd). The models are largely taken from the [Causal Salad 2021](https://github.com/Accio/causal_salad_2021) repository contributed by Richard McElreath.
 
+## Causal model selection
+
+See [2022-08-CausalModelSelectio.jmd](2022-08-CausalModelSelection.jmd). This tutorial explains and illustrates the principles of causal model selection in the analysis of molecular QTL data. The tutorial is written in [julia](https://julialang.org) using [Weave.jl](https://weavejl.mpastell.com/). If you are not familiar with [julia](https://julialang.org), download or clone the contents of this repository and open the file [2022-08-CausalModelSelection.html](2022-08-CausalModelSelection.html) in a browser. The code itself uses basic statistical and plotting functions, and should be easy to translate to other languages.
