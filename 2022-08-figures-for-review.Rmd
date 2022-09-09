@@ -66,7 +66,7 @@ activity_summ <- activity %>% dplyr::select(Manual.classification) %>%
 activityPlot <- ggplot(activity_summ, aes(x=Manual.classification, y=n)) +
   geom_bar(stat="identity", fill="lightblue", col="black") +
   ##theme(axis.text.x = element_text(angle=90)) +
-  xlab("Activities") + ylab("PubMed publications") +
+  xlab("Activities") + ylab("Publications") +
   coord_flip()
 print(activityPlot)
 ```
@@ -79,5 +79,15 @@ ggdraw() +
                   x = c(0, 0), 
                   y = c(1, 0.625))
 ```
-
+```{r CombinedPublicationFigureHor, fig.height=3, fig.width=9}
+ggdraw() + 
+  draw_plot(pubByYear +
+              theme(legend.position = c(0.4,0.85),
+                    legend.title = element_blank()), 
+            x=0.05, y=0, width=.35, height=1) +
+  draw_plot(activityPlot, x=0.4, y=0.0, width=.6, height=1, scale=1) +
+  draw_plot_label(label = c("A", "B"), size = 15,
+                  x = c(0, 0.4), 
+                  y = c(1, 1))
+```
 

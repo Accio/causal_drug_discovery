@@ -191,7 +191,7 @@ ggplot(xybid, aes(x=x, y=y)) + geom_boxplot() + geom_point() +
 set.seed(1888)
 N <- 50
 x <- rnorm(N, mean=5)
-z <- ifelse(x<5, -1, 1)
+z <- ifelse(x<5, 0, 1)
 y <- rnorm(N, mean=z*1.5)
 xzydata <- data.frame(x=x, z=z, y=y)
 xz.formula <- z ~ x
@@ -225,6 +225,24 @@ with(xzydata,
      plot(coeftab(lm(y ~ x),
                   lm(y ~ x + z)),
               pars="x"))
+```
+
+```{r xyPlot2, fig.height=3, fig.width=7}
+xyPlot2 <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  stat_quant_band(formula = y~x) 
+  ## +theme(axis.title = element_text(size=16))
+xyCondZPlot2 <- ggplot(xzydata %>% dplyr::mutate(z=factor(z)), aes(x=x, y=y, col=z)) + geom_point() +
+  geom_point() +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  stat_quant_band(formula = y~x)
+grid.arrange(grobs=list(xyPlot2, xyCondZPlot2), nrow=1, ncol=2)
 ```
 
 ```{r chainModel, fig.height=3, fig.width=3}

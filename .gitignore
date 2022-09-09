@@ -5,3 +5,5 @@ dowhy
 .Rhistory
 .RData
 #figures
+*.html
+figures/
