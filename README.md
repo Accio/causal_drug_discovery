@@ -1,17 +1,12 @@
 Causal inference for drug discovery and development
 ===
-Jitao David Zhang
+Jitao David Zhang and Tom Michoel
 
-This repository offers practitioners of drug discovery and development
-reproducible tutorials for doing causal inference with Python and R. It
-accompanies a review article on the same topic which will be published soon.
+This repository offers practitioners of drug discovery and development reproducible tutorials for doing causal inference. We provide three interactive notebooks to illustrate (1) causal inference with the generic programming language *Python*, (2) Bayesian causal inference with the statistical programming language *GNU-R*, and (3) model selection using the scientific programming language *Julia*.
 
-The repository is shared with the CC-BY 4.0 license. The context is being
-actively updated. Feedback through issues and pull requests are welcome .
+The software repository accompanies our review article [Causal inference in drug discovery and development](https://doi.org/10.1016/j.drudis.2023.103737), published in *Drug Discovery Today* in 2023, and is released with the CC-BY 4.0 license. Feedback through issues and pull requests are welcome.
 
-## Acknowledgement
-
-I thank Tom Michoel and Zhiwen Jiang for inspirations and discussions.
+We thank Zhiwen Jiang for inspirations and discussions.
 
 ## Causal inference with DoWhy package in Python
 
