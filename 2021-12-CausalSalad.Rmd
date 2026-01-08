@@ -49,12 +49,14 @@ yxPlot <- ggplot(xydata, aes(x=x, y=y)) + geom_point() +
                aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
                coef.digits=2, rr.digits=2,
                parse = TRUE) +
+  xlab("X") + ylab("Y") +
   ggtitle("True effect: 2.0")
 print(yxPlot)
 ```
 
 ```{r}
-yxPlainPlot <- ggplot(xydata, aes(x=x, y=y)) + geom_point()
+yxPlainPlot <- ggplot(xydata, aes(x=x, y=y)) + geom_point() +
+  xlab("X") + ylab("Y")
 print(yxPlainPlot)
 ```
 
@@ -133,6 +135,7 @@ uyxPlot <- ggplot(xyudata, aes(x=x, y=y)) + geom_point() +
                aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
                coef.digits=2, rr.digits=2,
                parse = TRUE) +
+  xlab("X") + ylab("Y") +
   ggtitle("True effect: 0.0")
 print(uyxPlot)
 ```
@@ -148,8 +151,27 @@ xyPlot <- ggplot(xydata, aes(x=y, y=x)) + geom_point() +
                aes(label = paste(..eq.label..,  ..rr.label.., sep = "*plain(\",\")~")), 
                coef.digits=2, rr.digits=2,
                parse = TRUE) +
+  xlab("X") + ylab("Y") +
   ggtitle("The reverse fit")
 grid.arrange(grobs=list(yxPlot, xyPlot, uyxPlot), nrow=1, ncol=3)
+```
+
+```{r xydata, fig.height=4, fig.width=4}
+xydata_lm <- lm(y~x, data=xydata)
+xydata_lm_newx <- seq(0,
+                      max(xydata$x),
+                      0.1)
+xydata_lm_newy <- predict(xydata_lm, newdata=data.frame(x=xydata_lm_newx))
+xydataPlot <- ggplot(xydata, aes(x=x, y=y)) + geom_point() +
+  xlim(0, 8) + ylim(0, 16) +
+  geom_line(data=data.frame(x=xydata_lm_newx,
+                            y=xydata_lm_newy),
+            col="darkgray", lty=4) +
+  geom_vline(xintercept=1, lty=2) +
+  geom_smooth(method="lm", formula = y~x) +
+  xlab("X") + ylab("Y") +
+  theme_minimal(base_size=16)
+print(xydataPlot)
 ```
 
 Learning causality from correlation needs experiments.
@@ -165,7 +187,9 @@ expLearnCausal <- ggplot(xydata, aes(x=x, y=y)) + geom_point() +
   xlim(0, 8) + ylim(0, 16) +
   geom_vline(xintercept=1, lty=2) +
   geom_point(data=xCauseYpred, col="red", shape=8, cex=4) +
-  geom_point(data=yCauseXpred, col="navyblue", shape=4, cex=4)
+  geom_point(data=yCauseXpred, col="navyblue", shape=4, cex=4) +
+  xlab("X") + ylab("Y")
+
 print(expLearnCausal)
 ```
 ```{r write_tsv_xydata}
@@ -186,6 +210,7 @@ ggplot(xybid, aes(x=x, y=y)) + geom_boxplot() + geom_point() +
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
+  xlab("X") + ylab("Y") +
   ggtitle("True effect: 2.0")
 ```
 
@@ -205,20 +230,23 @@ xzPlot <- ggplot(xzydata, aes(x=x, y=z)) + geom_point() +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(z))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
-               parse = TRUE)
+               parse = TRUE) +
+  xlab("X") + ylab("Z")
 zyPlot <- ggplot(xzydata, aes(x=z, y=y)) + geom_point() +
   geom_smooth(method = "lm", se=FALSE, color="darkgray", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                         eq.x.rhs = "z",
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
-               parse = TRUE)
+               parse = TRUE) +
+  xlab("Z") + ylab("Y")
 xyWoZPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
   geom_smooth(method = "lm", se=FALSE, color="darkgray", formula = my.formula) +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
-               parse = TRUE)
+               parse = TRUE) +
+  xlab("X") + ylab("Y")
 grid.arrange(grobs=list(xzPlot, zyPlot, xyWoZPlot), nrow=1, ncol=3)
 ```
 
@@ -237,7 +265,8 @@ xyPlot2 <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
-  stat_quant_band(formula = y~x) 
+  stat_quant_band(formula = y~x) +
+  xlab("X") + ylab("Y")
   ## +theme(axis.title = element_text(size=16))
 xyCondZPlot2 <- ggplot(xzydata %>% dplyr::mutate(z=factor(z)), aes(x=x, y=y, col=z)) + geom_point() +
   geom_point() +
@@ -245,7 +274,8 @@ xyCondZPlot2 <- ggplot(xzydata %>% dplyr::mutate(z=factor(z)), aes(x=x, y=y, col
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
-  stat_quant_band(formula = y~x)
+  stat_quant_band(formula = y~x) +
+  xlab("X") + ylab("Y")
 grid.arrange(grobs=list(xyPlot2, xyCondZPlot2), nrow=1, ncol=2)
 ```
 
@@ -305,14 +335,16 @@ forkXyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
-  stat_quant_band(formula = y~x)
+  stat_quant_band(formula = y~x) +
+  xlab("X") + ylab("Y")
 forkXyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
   geom_point() +
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
-  stat_quant_band(formula = y~x)
+  stat_quant_band(formula = y~x) +
+  xlab("X") + ylab("Y")
 
 grid.arrange(grobs=list(forkXyPlot, forkXyCondZPlot), nrow=1, ncol=2)
 ```
@@ -323,13 +355,15 @@ xzPlot <- ggplot(xzydata, aes(x=z, y=x)) + geom_boxplot() + geom_point() +
                eq.with.lhs = "italic(hat(x))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
-  ggtitle("True effect: 1.0")
+  ggtitle("True effect: 1.0") +
+  xlab("Z") + ylab("X")
 yzPlot <- ggplot(xzydata, aes(x=z, y=y)) + geom_boxplot() + geom_point() + 
   ggpmisc::stat_poly_eq(formula = my.formula,
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
-  ggtitle("True effect: 1.0")
+  ggtitle("True effect: 1.0") +
+  xlab("Z") + ylab("Y")
 grid.arrange(grobs=list(xzPlot, yzPlot), nrow=1, ncol=2)
 ```
 
@@ -380,7 +414,8 @@ colXyPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
-  stat_quant_band(formula = y~x)
+  stat_quant_band(formula = y~x) +
+  xlab("X") + ylab("Y")
 colXyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
   geom_point(data=filter(xzydata, z==-1), mapping=aes(x=x, y=y), col="mistyrose",
              inherit.aes = FALSE) +
@@ -388,7 +423,8 @@ colXyCondZPlot <- ggplot(xzydata, aes(x=x, y=y, col=z)) + geom_point() +
                eq.with.lhs = "italic(hat(y))~`=`~",
                aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
                parse = TRUE) +
-  stat_quant_band(formula = y~x)
+  stat_quant_band(formula = y~x) +
+  xlab("X") + ylab("Y")
 grid.arrange(grobs=list(colXyPlot, colXyCondZPlot), nrow=1, ncol=2)
 ```
 ```{r}
@@ -397,7 +433,8 @@ View(xzydata)
 
 
 ```{r}
-xyzPlot <- ggplot(xzydata, aes(x=x+y, y=z)) + geom_point()
+xyzPlot <- ggplot(xzydata, aes(x=x+y, y=z)) + geom_point() +
+  xlab("X + Y") + ylab("Z")
 print(xyzPlot)
 ```
 ## Descendent
