@@ -26,6 +26,7 @@ library(cmdstanr) ## installation instructions available at https://mc-stan.org/
 library(ggpmisc)
 library(ggthemes)
 library(gridExtra)
+library(readr)
 ggplot2::theme_set(theme_minimal(base_size=14))
 ```
 
@@ -166,6 +167,9 @@ expLearnCausal <- ggplot(xydata, aes(x=x, y=y)) + geom_point() +
   geom_point(data=xCauseYpred, col="red", shape=8, cex=4) +
   geom_point(data=yCauseXpred, col="navyblue", shape=4, cex=4)
 print(expLearnCausal)
+```
+```{r write_tsv_xydata}
+readr::write_tsv(xydata, "data/2026-01-causal-salad-xydata.tsv")
 ```
 
 ## A binary case
