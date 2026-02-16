@@ -956,10 +956,10 @@ Original publications:
 
 ```{r neuroM1, fig.width=3, fig.height=1}
 set.seed(1888)
-neuroM1 <- dagify(N ~ E,
+neuroM1 <- dagify(N ~ T,
                          B ~ N,
-                 coords = list(x=c(E=0, N=1, B=2),
-                               y=c(E=0, N=0, B=0))) %>%
+                 coords = list(x=c(T=0, N=1, B=2),
+                               y=c(T=0, N=0, B=0))) %>%
   tidy_dagitty(layout="linear")
 neuroM1Plot <- ggplot(neuroM1, aes(x = x, y = y, xend = xend, yend = yend)) +
       geom_dag_point() +
@@ -971,10 +971,10 @@ print(neuroM1Plot)
 
 ```{r neuroM2, fig.width=3, fig.height=1}
 set.seed(1888)
-neuroM2 <- dagify(N ~ E,
-                         B ~ E,
-                 coords = list(x=c(E=1, N=0, B=2),
-                               y=c(E=0, N=-.5, B=-.5))) %>%
+neuroM2 <- dagify(N ~ T,
+                         B ~ T,
+                 coords = list(x=c(T=1, N=0, B=2),
+                               y=c(T=0, N=-.5, B=-.5))) %>%
   tidy_dagitty(layout="linear")
 neuroM2Plot <- ggplot(neuroM2, aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_dag_point() +
@@ -984,3 +984,24 @@ neuroM2Plot <- ggplot(neuroM2, aes(x = x, y = y, xend = xend, yend = yend)) +
   theme_dag()
 print(neuroM2Plot)
 ```
+
+## Mendelian randomization example
+
+```{r mr, fig.height=3, fig.width=3}
+set.seed(1888)
+mrModel <- dagify(FGF21 ~ SNPs,
+                  MASH ~ FGF21,
+                  FGF21 ~ U,
+                  MASH ~ U,
+                 coords = list(x=c(SNPs=0, FGF21=1, MASH=2, U=1.5),
+                               y=c(SNPs=0, FGF21=0, MASH=0, U=1))) %>%
+  tidy_dagitty(layout="auto")
+mrPlot <- ggplot(mrModel, aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_dag_point() +
+  geom_dag_edges_link() +
+  ylim(-1, 2) + xlim(-.1, 2.1) +
+  geom_dag_text(size=4, vjust=0.5) +
+  theme_dag()
+print(mrPlot)
+```
+
