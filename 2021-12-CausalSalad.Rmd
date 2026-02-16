@@ -171,12 +171,12 @@ xydataPlot <- ggplot(xydata, aes(x=x, y=y)) + geom_point() +
   geom_smooth(method="lm", formula = y~x) +
   xlab("X") + ylab("Y") +
   theme_minimal(base_size=16)
-print(xydataPlot)
+(xydataPlot)
 ```
 
 Learning causality from correlation needs experiments.
 
-```{r learningCausal}
+```{r learningCausal, fig.height=4, fig.width=4}
 set.seed(1887)
 xknock <- rnorm(3, mean=1, sd=0.5)
 xCauseYpred <- data.frame(x=xknock, 
@@ -188,10 +188,16 @@ expLearnCausal <- ggplot(xydata, aes(x=x, y=y)) + geom_point() +
   geom_vline(xintercept=1, lty=2) +
   geom_point(data=xCauseYpred, col="red", shape=8, cex=4) +
   geom_point(data=yCauseXpred, col="navyblue", shape=4, cex=4) +
+  geom_hline(yintercept=median(xydata$y), lty=4, col="darkgray") +
+  geom_line(data=data.frame(x=xydata_lm_newx,
+                            y=xydata_lm_newy),
+            col="darkgray", lty=4) +
+  geom_smooth(method="lm", formula = y~x) +
   xlab("X") + ylab("Y")
 
 print(expLearnCausal)
 ```
+
 ```{r write_tsv_xydata}
 readr::write_tsv(xydata, "data/2026-01-causal-salad-xydata.tsv")
 ```
@@ -215,6 +221,21 @@ ggplot(xybid, aes(x=x, y=y)) + geom_boxplot() + geom_point() +
 ```
 
 ## A chain
+
+
+```{r chainModel, fig.height=3, fig.width=3}
+set.seed(1888)
+chainModel <- dagify(z ~ x,
+                     y ~ z,
+                 coords = list(x=c(x=0, z=1, y=2),
+                               y=c(x=0, z=0, y=0))) %>%
+  tidy_dagitty(layout="linear")
+ggplot(chainModel, aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_dag_point() +
+      geom_dag_edges_link() +
+      geom_dag_text(size=12, vjust=0.3) +
+      theme_dag()
+```
 
 ```{r, fig.height=3, fig.width=9}
 set.seed(1888)
@@ -250,13 +271,17 @@ xyWoZPlot <- ggplot(xzydata, aes(x=x, y=y)) + geom_point() +
 grid.arrange(grobs=list(xzPlot, zyPlot, xyWoZPlot), nrow=1, ncol=3)
 ```
 
-```{r chainCondition}
+```{r chainCondition, fig.height=3, fig.width=4}
 chainYvX <- lm(y~x, data=xzydata)
 chainYvXcZ <- lm(y~x+z, data=xzydata)
-with(xzydata,
+
+{
+  par(mar=c(3, 3, 1.5, 1.5), mgp=c(2, 0.8, 0))
+  with(xzydata,
      plot(coeftab(lm(y ~ x),
                   lm(y ~ x + z)),
-              pars="x"))
+              pars="x", xlab="Coefficient of x"))
+}
 ```
 
 ```{r xyPlot2, fig.height=3, fig.width=7}
@@ -278,20 +303,19 @@ xyCondZPlot2 <- ggplot(xzydata %>% dplyr::mutate(z=factor(z)), aes(x=x, y=y, col
   xlab("X") + ylab("Y")
 grid.arrange(grobs=list(xyPlot2, xyCondZPlot2), nrow=1, ncol=2)
 ```
-
-```{r chainModel, fig.height=3, fig.width=3}
-set.seed(1888)
-chainModel <- dagify(z ~ x,
-                 y ~ z,
-                 exposure = "x",
-                 outcome="y") %>%
-  tidy_dagitty(layout="linear")
-ggplot(chainModel, aes(x = x, y = y, xend = xend, yend = yend)) +
-      geom_dag_point() +
-      geom_dag_edges_link() +
-      geom_dag_text(size=12, vjust=0.3) +
-      theme_dag()
+```{r, fig.height=3, fig.width=4}
+chainYzPlotCondX <- ggplot(xzydata, aes(x=z, y=y, color=x)) + geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="darkgray", formula = my.formula) +
+  ggpmisc::stat_poly_eq(formula = my.formula,
+                        eq.x.rhs = "z",
+               eq.with.lhs = "italic(hat(y))~`=`~",
+               aes(label = paste(..eq.label.., sep = "*plain(\",\")~")), 
+               parse = TRUE) +
+  xlab("Z") + ylab("Y")
+print(chainYzPlotCondX)
 ```
+
+
 ## A fork
 
 ```{r modelFork, fig.height=3, fig.width=3}
@@ -299,18 +323,36 @@ set.seed(1888)
 modelFork <- dagify(y ~ z,
                     x ~ z)%>%
   tidy_dagitty(seed=2, layout="tree")
-ggplot(modelFork, aes(x = x, y = y, xend = xend, yend = yend)) +
+modelForkPlot <- ggplot(modelFork, aes(x = x, y = y, xend = xend, yend = yend)) +
       geom_dag_point() +
       geom_dag_edges_link() +
       geom_dag_text(size=12, vjust=0.3) +
       theme_dag()
+print(modelForkPlot)
 ```
+```{r shortFork, fig.height=1.5, fig.width=3}
+set.seed(1887)
+shortFork <- dagify(x ~ z,
+                    y ~ z,
+                 coords = list(x = c(x=0, z=1, y=2),
+                               y = c(x=-0.5, z=0, y=-0.5))) %>%
+  tidy_dagitty(layout="auto")
+shortForkPlot <- ggplot(shortFork,
+                        aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_dag_point() +
+  geom_dag_edges_fan() +
+  geom_dag_text(size=12, vjust=0.3, color="white") +
+  ylim(-1, 0.5) + xlim(-.1, 2.1) +
+  theme_dag()
+print(shortForkPlot)
+```
+
 ```{r linearFork, fig.height=3, fig.width=3}
 set.seed(1887)
 lfmod <- dagify(x ~ z,
                 y ~ z,
                  coords = list(x = c(x=0, z=1, y=2),
-                               y= c(x=0, z=0, y=0))) %>%
+                               y = c(x=0, z=0, y=0))) %>%
   tidy_dagitty(layout="auto")
 lfmodPlot <- ggplot(lfmod,
                     aes(x = x, y = y, xend = xend, yend = yend)) +
@@ -384,6 +426,23 @@ ggplot(modelCollider, aes(x = x, y = y, xend = xend, yend = yend)) +
       geom_dag_text(size=12, vjust=0.3) +
       theme_dag()
 ```
+```{r shortCollider, fig.height=1.5, fig.width=3}
+set.seed(1887)
+shortCollider <- dagify(z ~ x,
+                z ~ y,
+                 coords = list(x = c(x=0, z=1, y=2),
+                               y = c(x=0.5, z=0, y=0.5))) %>%
+  tidy_dagitty(layout="auto")
+shortColliderPlot <- ggplot(shortCollider,
+                        aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_dag_point() +
+  geom_dag_edges_fan() +
+  geom_dag_text(size=12, vjust=0.3, color="white") +
+  ylim(-0.5, 1.5) + xlim(-.1, 2.1) +
+  theme_dag()
+print(shortColliderPlot)
+```
+
 ```{r linearCollider, fig.height=3, fig.width=3}
 set.seed(1887)
 lcmod <- dagify(z ~ x,
@@ -888,3 +947,40 @@ abline(lm(Y[Z==0]~X[Z==0]),col=1,lwd=3)
 abline(lm(Y~X),lwd=3,lty=3)
 ```
 
+# Addtional plot for the neurogenesis study
+
+Original publications:
+
+* Creer, David J. et al. “Running Enhances Spatial Pattern Separation in Mice.” Proceedings of the National Academy of Sciences 107, no. 5 (February 2, 2010): 2367–72.
+* Lazic Stanley E. “Using Causal Models to Distinguish between Neurogenesis-Dependent and -Independent Effects on behavior.” Journal of The Royal Society Interface 9, no. 70 (May 7, 2012): 907–17.
+
+```{r neuroM1, fig.width=3, fig.height=1}
+set.seed(1888)
+neuroM1 <- dagify(N ~ E,
+                         B ~ N,
+                 coords = list(x=c(E=0, N=1, B=2),
+                               y=c(E=0, N=0, B=0))) %>%
+  tidy_dagitty(layout="linear")
+neuroM1Plot <- ggplot(neuroM1, aes(x = x, y = y, xend = xend, yend = yend)) +
+      geom_dag_point() +
+      geom_dag_edges_link() +
+      geom_dag_text(size=10, vjust=0.5) +
+      theme_dag()
+print(neuroM1Plot)
+```
+
+```{r neuroM2, fig.width=3, fig.height=1}
+set.seed(1888)
+neuroM2 <- dagify(N ~ E,
+                         B ~ E,
+                 coords = list(x=c(E=1, N=0, B=2),
+                               y=c(E=0, N=-.5, B=-.5))) %>%
+  tidy_dagitty(layout="linear")
+neuroM2Plot <- ggplot(neuroM2, aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_dag_point() +
+  geom_dag_edges_link() +
+  ylim(-1, 0.5) + xlim(-.1, 2.1) +
+  geom_dag_text(size=10, vjust=0.5) +
+  theme_dag()
+print(neuroM2Plot)
+```

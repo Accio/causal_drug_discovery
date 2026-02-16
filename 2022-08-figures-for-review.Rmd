@@ -79,6 +79,7 @@ ggdraw() +
                   x = c(0, 0), 
                   y = c(1, 0.625))
 ```
+
 ```{r CombinedPublicationFigureHor, fig.height=3, fig.width=9}
 ggdraw() + 
   draw_plot(pubByYear +
