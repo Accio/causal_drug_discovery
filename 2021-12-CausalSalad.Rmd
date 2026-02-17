@@ -989,19 +989,37 @@ print(neuroM2Plot)
 
 ```{r mr, fig.height=3, fig.width=3}
 set.seed(1888)
-mrModel <- dagify(FGF21 ~ SNPs,
+mrModel <- dagify(G ~ S,
+                  D ~ G,
+                  G ~ U,
+                  D ~ U,
+                 coords = list(x=c(S=0, G=1, D=2, U=1.5),
+                               y=c(S=0, G=0, D=0, U=1))) %>%
+  tidy_dagitty(layout="auto")
+mrPlot <- ggplot(mrModel, aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_dag_point() +
+  geom_dag_edges_link() +
+  ylim(-1, 2) + xlim(-.1, 2.1) +
+  geom_dag_text(size=12, vjust=0.5) +
+  theme_dag()
+print(mrPlot)
+```
+
+```{r mr_FGF21, fig.height=3, fig.width=3}
+set.seed(1888)
+mrFgf21Model <- dagify(FGF21 ~ SNPs,
                   MASH ~ FGF21,
                   FGF21 ~ U,
                   MASH ~ U,
                  coords = list(x=c(SNPs=0, FGF21=1, MASH=2, U=1.5),
                                y=c(SNPs=0, FGF21=0, MASH=0, U=1))) %>%
   tidy_dagitty(layout="auto")
-mrPlot <- ggplot(mrModel, aes(x = x, y = y, xend = xend, yend = yend)) +
+mrFgf21Plot <- ggplot(mrFgf21Model, aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_dag_point() +
   geom_dag_edges_link() +
   ylim(-1, 2) + xlim(-.1, 2.1) +
   geom_dag_text(size=4, vjust=0.5) +
   theme_dag()
-print(mrPlot)
+print(mrFgf21Plot)
 ```
 
