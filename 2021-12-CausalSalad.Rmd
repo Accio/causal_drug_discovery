@@ -989,12 +989,12 @@ print(neuroM2Plot)
 
 ```{r mr, fig.height=3, fig.width=3}
 set.seed(1888)
-mrModel <- dagify(G ~ S,
-                  D ~ G,
-                  G ~ U,
-                  D ~ U,
-                 coords = list(x=c(S=0, G=1, D=2, U=1.5),
-                               y=c(S=0, G=0, D=0, U=1))) %>%
+mrModel <- dagify(X ~ G,
+                  Y ~ X,
+                  X ~ U,
+                  Y ~ U,
+                 coords = list(x=c(G=0, X=1, Y=2, U=1.5),
+                               y=c(G=0, X=0, Y=0, U=1))) %>%
   tidy_dagitty(layout="auto")
 mrPlot <- ggplot(mrModel, aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_dag_point() +
